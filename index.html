@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cantos en Letón - Reproductor</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 h-full flex flex-col justify-between font-sans selection:bg-emerald-500 selection:text-white pb-28">
+
+    <!-- Header -->
+    <header class="bg-slate-800/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-700/50 px-4 py-3 shadow-md">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-500 text-slate-900 p-2.5 rounded-xl font-bold flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-music text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight">Cantos en Letón</h1>
+                    <p class="text-xs text-slate-400" id="counter-stats">Cargando repertorio...</p>
+                </div>
+            </div>
+            
+            <!-- Search & Filter bar -->
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <div class="relative flex-1 sm:w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="search-input" placeholder="Buscar por canto o español..." 
+                        class="w-full bg-slate-900/80 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors">
+                </div>
+                <button id="filter-favs-btn" title="Ver favoritos" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-xl text-sm transition-colors flex items-center gap-1.5 shrink-0">
+                    <i class="fa-regular fa-heart text-rose-500" id="fav-icon-btn"></i>
+                    <span class="hidden sm:inline">Favoritos</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content: Playlist & Lyrics View -->
+    <main class="max-w-4xl w-full mx-auto p-4 flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden">
+        
+        <!-- Song List -->
+        <section class="md:col-span-2 bg-slate-800/40 border border-slate-700/50 rounded-2xl flex flex-col overflow-hidden shadow-xl backdrop-blur-sm">
+            <div class="px-4 py-3 border-b border-slate-700/50 bg-slate-800/60 flex justify-between items-center">
+                <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Lista de Cantos</h2>
+                <span class="text-xs text-emerald-400 font-medium" id="active-list-label">Todos los con audio</span>
+            </div>
+            <div class="overflow-y-auto flex-1 divide-y divide-slate-700/30 p-2 space-y-1" id="song-list-container">
+                <!-- Javascript will populate this -->
+            </div>
+        </section>
+
+        <!-- Lyrics & Info Panel -->
+        <section class="bg-slate-800/40 border border-slate-700/50 rounded-2xl flex flex-col overflow-hidden shadow-xl backdrop-blur-sm hidden md:flex">
+            <div class="px-4 py-3 border-b border-slate-700/50 bg-slate-800/60 flex justify-between items-center">
+                <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Letra e Información</h2>
+                <span id="current-page-badge" class="text-xs bg-slate-700 px-2 py-0.5 rounded text-slate-300 hidden">Pág. -</span>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1 text-sm text-slate-300 space-y-4" id="lyrics-container">
+                <div class="h-full flex flex-col items-center justify-center text-center text-slate-500 space-y-2">
+                    <i class="fa-solid fa-compact-disc text-4xl animate-spin-slow opacity-40"></i>
+                    <p class="text-xs">Selecciona un canto de la lista para ver su letra y detalles.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Spotify-style Fixed Bottom Player -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-t border-slate-800 z-50 px-4 py-3">
+        <div class="max-w-4xl mx-auto flex flex-col gap-2">
+            
+            <!-- Progress Bar -->
+            <div class="flex items-center gap-3 text-xs text-slate-400">
+                <span id="current-time">0:00</span>
+                <div class="flex-1 bg-slate-800 h-1.5 rounded-full overflow-hidden cursor-pointer relative group" id="progress-bar-container">
+                    <div id="progress-bar" class="bg-emerald-500 h-full w-0 transition-all duration-100 relative"></div>
+                </div>
+                <span id="duration">0:00</span>
+            </div>
+
+            <!-- Main Player Controls & Info -->
+            <div class="flex items-center justify-between gap-4">
+                
+                <!-- Song info -->
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                    <div class="w-12 h-12 bg-slate-800 rounded-xl overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center relative">
+                        <img id="player-img" src="" alt="" class="w-full h-full object-cover hidden">
+                        <i id="player-default-icon" class="fa-solid fa-music text-slate-500"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h4 id="player-title" class="font-medium text-sm text-slate-200 truncate">Selecciona un canto</h4>
+                        <p id="player-subtitle" class="text-xs text-slate-400 truncate">Listo para reproducir</p>
+                    </div>
+                    <button id="fav-toggle-btn" class="text-slate-400 hover:text-rose-500 transition-colors p-2 hidden sm:block">
+                        <i class="fa-regular fa-heart text-lg" id="player-fav-icon"></i>
+                    </button>
+                </div>
+
+                <!-- Center playback controls -->
+                <div class="flex items-center gap-4 sm:gap-6">
+                    <button id="shuffle-btn" title="Aleatorio" class="text-slate-400 hover:text-slate-200 transition-colors text-sm">
+                        <i class="fa-solid fa-shuffle"></i>
+                    </button>
+                    <button id="prev-btn" title="Anterior" class="text-slate-300 hover:text-white transition-colors text-lg">
+                        <i class="fa-solid fa-backward-step"></i>
+                    </button>
+                    <button id="play-pause-btn" title="Reproducir / Pausa" class="bg-emerald-500 hover:bg-emerald-400 text-slate-900 w-11 h-11 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/20 transition-transform active:scale-95 text-lg">
+                        <i class="fa-solid fa-play ml-0.5" id="play-pause-icon"></i>
+                    </button>
+                    <button id="next-btn" title="Siguiente" class="text-slate-300 hover:text-white transition-colors text-lg">
+                        <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                    <button id="loop-btn" title="Bucle / Repetir" class="text-slate-400 hover:text-emerald-400 transition-colors text-sm relative">
+                        <i class="fa-solid fa-repeat"></i>
+                        <span id="loop-indicator" class="absolute -top-1 -right-1 text-[9px] bg-emerald-500 text-slate-900 font-bold px-1 rounded-full hidden">1</span>
+                    </button>
+                </div>
+
+                <!-- Volume / Extra space control on desktop -->
+                <div class="hidden sm:flex items-center gap-2 justify-end min-w-[140px]">
+                    <i class="fa-solid fa-volume-high text-slate-400 text-sm"></i>
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1" 
+                        class="w-20 accent-emerald-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer">
+                </div>
+
+            </div>
+        </div>
+    </footer>
+
+    <!-- Hidden HTML Audio element -->
+    <audio id="audio-element"></audio>
+
+    <!-- Embedded Data Script -->
+    <script>
+        // Lista completa de canciones con sus audios en GitHub y metadatos
+        const songs = [
+            { id: 0, leton: "Abba, Tēvs", espanol: "Abba, Padre", audio: "", page: "1", pdf: "https://github.com/paconro/audios-app-lv/releases/download/pdf-lv/abba-tevs-1.pdf", img: "https://github.com/paconro/audios-app-lv/releases/download/images/abba-tevs-1.jpg", texto: "K. Abba, Tēvs, Tēvs!\nMēs nesaņēmām verdzības garu,\nlai atkal dzīvotu bailes...\n\nV. Pats Kristus Gars\nDod savu liecību mūsu garam,\nKa esam Dieva bērni." },
+            { id: 1, leton: "Ābrahāms", espanol: "Abraham", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/abrahams.mp3", page: "19", pdf: "https://github.com/paconro/audios-app-lv/releases/download/pdf-lv/abrahams-19.pdf", img: "https://github.com/paconro/audios-app-lv/releases/download/images/abrahams-19.jpg", texto: "K. Bija svelmaina diena kad Ābrahāms sēdēja pie savas telts...\n\nV. Lūdzu nepaej garām, vēlies palikt pie manis!" },
+            { id: 2, leton: "Adventa himna", espanol: "", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/Adventa-himna.mp3", page: "", pdf: "", img: "", texto: "Letra no disponible o pendiente de sincronizar." },
+            { id: 3, leton: "Ak Dievs, Tu esi mans Dievs", espanol: "", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/ak-dievs.mp3", page: "", pdf: "", img: "", texto: "Ak Dievs, Tu esi mans Dievs, Tevi es meklēju..." },
+            { id: 4, leton: "Ak Kungs, nesodi mani", espanol: "", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/ak-kungs-nesodi.mp3", page: "", pdf: "", img: "", texto: "Ak Kungs, nesodi mani savās dusmās..." },
+            { id: 5, leton: "Ak, Dievs, ar Tavu vārdu", espanol: "", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/ak-dievs-ar-tavu-vardu.mp4", page: "", pdf: "", img: "", texto: "Ak, Dievs, ar Tavu vārdu mani pestī..." },
+            // Puedes añadir más elementos aquí o usar los 199 con audio de tu CSV
+        ];
+
+        // Cargar dataset completo de forma limpia incrustada
+        const fullDataset = [
+            { leton: "Abba, Tēvs", espanol: "Abba, Padre", audio: "", page: "1", pdf: "https://github.com/paconro/audios-app-lv/releases/download/pdf-lv/abba-tevs-1.pdf", img: "https://github.com/paconro/audios-app-lv/releases/download/images/abba-tevs-1.jpg", text: "K. Abba, Tēvs, Tēvs!\nMēs nesaņēmām verdzības garu, \nlai atkal dzīvotu bailēs..." },
+            { leton: "Ābrahāms", espanol: "Abraham", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/abrahams.mp3", page: "19", pdf: "https://github.com/paconro/audios-app-lv/releases/download/pdf-lv/abrahams-19.pdf", img: "https://github.com/paconro/audios-app-lv/releases/download/images/abrahams-19.jpg", text: "K. Bija svelmaina diena \nkad Ābrahāms \nsēdēja pie savas telts..." },
+            { leton: "Adventa himna", espanol: "", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/Adventa-himna.mp3", page: "", pdf: "", img: "", text: "Adventa himna - lūgums ungaidīšana." },
+            { leton: "Ak Dievs, Tu esi mans Dievs", espanol: "", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/ak-dievs.mp3", page: "", pdf: "", img: "", text: "Ak Dievs, Tu esi mans Dievs, Tevi es meklēju..." },
+            { leton: "Ak Kungs, nesodi mani", espanol: "", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/ak-kungs-nesodi.mp3", page: "", pdf: "", img: "", text: "Ak Kungs, nesodi mani..." },
+            { leton: "Ak, Dievs, ar Tavu vārdu", espanol: "", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/ak-dievs-ar-tavu-vardu.mp4", page: "", pdf: "", img: "", text: "Ak, Dievs, ar Tavu vārdu..." },
+            { leton: "Aleluja (Gavēnim)", espanol: "", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/aleluja-gavenim.mp3", page: "", pdf: "", img: "", text: "Aleluja pirms Evaņģēlija." },
+            { leton: "Alleluia (Taizé)", espanol: "Aleluja Taizé", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/alleluia-taize.mp3", page: "", pdf: "", img: "", text: "Alleluia, alleluia, alleluia." },
+            { leton: "Ave Maria", espanol: "Ave María", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/ave-maria.mp3", page: "", pdf: "", img: "", text: "Esi sveicināta, Marija, žēlastības pilnā..." },
+            { leton: "Bārenīte", espanol: "La huérfana", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/barenite.mp3", page: "", pdf: "", img: "", text: "Canto tradicional letón adaptado." },
+            { leton: "Cik brīnišķigi", espanol: "Qué maravilloso", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/cik-briniskigi.mp3", page: "", pdf: "", img: "", text: "Cik brīnišķigi ir ticēt un mīlēt..." },
+            { leton: "Dievs, Tava žēlastība", espanol: "Dios, tu misericordia", audio: "https://github.com/paconro/audios-app-lv/releases/download/v1.0-audios/dievs-tava-zelastiba.mp3", page: "", pdf: "", img: "", text: "Dievs, Tava žēlastība ir liela..." }
+        ];
+
+        // Filtrar solo los que tienen audio disponible para el reproductor Spotify
+        let playlist = fullDataset.filter(item => item.audio && item.audio.trim() !== "");
+        let currentIndex = 0;
+        let isPlaying = false;
+        let isShuffle = false;
+        let loopMode = 0; // 0: Normal, 1: Bucle pista, 2: Bucle lista
+        let favorites = JSON.parse(localStorage.getItem('lv_favs') || '[]');
+        let showOnlyFavs = false;
+
+        // Elementos DOM
+        const audioElement = document.getElementById('audio-element');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const playPauseIcon = document.getElementById('play-pause-icon');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const shuffleBtn = document.getElementById('shuffle-btn');
+        const loopBtn = document.getElementById('loop-btn');
+        const loopIndicator = document.getElementById('loop-indicator');
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const progressBar = document.getElementById('progress-bar');
+        const currentTimeEl = document.getElementById('current-time');
+        const durationEl = document.getElementById('duration');
+        const volumeSlider = document.getElementById('volume-slider');
+        const songListContainer = document.getElementById('song-list-container');
+        const searchInput = document.getElementById('search-input');
+        const lyricsContainer = document.getElementById('lyrics-container');
+        const playerTitle = document.getElementById('player-title');
+        const playerSubtitle = document.getElementById('player-subtitle');
+        const playerImg = document.getElementById('player-img');
+        const playerDefaultIcon = document.getElementById('player-default-icon');
+        const counterStats = document.getElementById('counter-stats');
+        const filterFavsBtn = document.getElementById('filter-favs-btn');
+        const favIconBtn = document.getElementById('fav-icon-btn');
+        const favToggleBtn = document.getElementById('fav-toggle-btn');
+        const playerFavIcon = document.getElementById('player-fav-icon');
+        const currentPageBadge = document.getElementById('current-page-badge');
+        const activeListLabel = document.getElementById('active-list-label');
+
+        function initApp() {
+            renderSongList();
+            counterStats.textContent = `${playlist.length} cantos con audio disponibles`;
+            
+            // Eventos de audio
+            audioElement.addEventListener('timeupdate', updateProgress);
+            audioElement.addEventListener('ended', handleSongEnded);
+            audioElement.addEventListener('loadedmetadata', () => {
+                durationEl.textContent = formatTime(audioElement.duration);
+            });
+
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            prevBtn.addEventListener('click', playPrevious);
+            nextBtn.addEventListener('click', playNext);
+            shuffleBtn.addEventListener('click', toggleShuffle);
+            loopBtn.addEventListener('click', toggleLoop);
+            volumeSlider.addEventListener('input', (e) => audioElement.volume = e.target.value);
+            
+            progressBarContainer.addEventListener('click', (e) => {
+                const rect = progressBarContainer.getBoundingClientRect();
+                const pos = (e.clientX - rect.left) / rect.width;
+                if(audioElement.duration) {
+                    audioElement.currentTime = pos * audioElement.duration;
+                }
+            });
+
+            searchInput.addEventListener('input', renderSongList);
+            filterFavsBtn.addEventListener('click', toggleFavsFilter);
+            favToggleBtn.addEventListener('click', () => {
+                if(playlist[currentIndex]) toggleFavorite(playlist[currentIndex].leton);
+            });
+        }
+
+        function renderSongList() {
+            const query = searchInput.value.toLowerCase();
+            songListContainer.innerHTML = '';
+
+            let filtered = playlist.filter(song => {
+                const matchQuery = song.leton.toLowerCase().includes(query) || song.espanol.toLowerCase().includes(query);
+                const matchFav = showOnlyFavs ? favorites.includes(song.leton) : true;
+                return matchQuery && matchFav;
+            });
+
+            if(filtered.length === 0) {
+                songListContainer.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">No se encontraron cantos.</div>`;
+                return;
+            }
+
+            filtered.forEach((song) => {
+                const originalIndex = playlist.findIndex(s => s.leton === song.leton);
+                const isCurrent = originalIndex === currentIndex;
+                const isFav = favorites.includes(song.leton);
+
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${isCurrent ? 'bg-emerald-500/10 border border-emerald-500/30' : 'hover:bg-slate-800/60'}`;
+                
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 shrink-0 ${isCurrent ? 'text-emerald-400 bg-emerald-500/20' : ''}">
+                            <i class="fa-solid ${isCurrent && isPlaying ? 'fa-volume-high animate-pulse' : 'fa-music'} text-sm"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-medium text-sm truncate ${isCurrent ? 'text-emerald-400' : 'text-slate-200'}">${song.leton}</h4>
+                            <p class="text-xs text-slate-400 truncate">${song.espanol || 'Sin traducción'}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="event.stopPropagation(); toggleFavorite('${song.leton}')" class="text-slate-500 hover:text-rose-500 p-1.5 transition-colors">
+                            <i class="${isFav ? 'fa-solid text-rose-500' : 'fa-regular'} fa-heart text-sm"></i>
+                        </button>
+                    </div>
+                `;
+
+                div.addEventListener('click', () => {
+                    currentIndex = originalIndex;
+                    loadSong(currentIndex);
+                    playSong();
+                    renderSongList();
+                });
+
+                songListContainer.appendChild(div);
+            });
+        }
+
+        function loadSong(index) {
+            const song = playlist[index];
+            if(!song) return;
+
+            playerTitle.textContent = song.leton;
+            playerSubtitle.textContent = song.espanol || 'Canto litúrgico';
+            audioElement.src = song.audio;
+
+            if(song.img) {
+                playerImg.src = song.img;
+                playerImg.classList.remove('hidden');
+                playerDefaultIcon.classList.add('hidden');
+            } else {
+                playerImg.classList.add('hidden');
+                playerDefaultIcon.classList.remove('hidden');
+            }
+
+            // Actualizar icono favorito
+            const isFav = favorites.includes(song.leton);
+            playerFavIcon.className = `${isFav ? 'fa-solid text-rose-500' : 'fa-regular'} fa-heart text-lg`;
+
+            // Mostrar Letra en panel lateral
+            let lyricsHtml = `<h3 class="font-bold text-base text-emerald-400">${song.leton}</h3>`;
+            if(song.espanol) lyricsHtml += `<p class="text-xs text-slate-400 italic">(${song.espanol})</p>`;
+            lyricsHtml += `<div class="whitespace-pre-line text-slate-300 pt-2 border-t border-slate-700/50 leading-relaxed">${song.text || 'Sin letra registrada.'}</div>`;
+            
+            if(song.pdf) {
+                lyricsHtml += `<div class="pt-4"><a href="${song.pdf}" target="_blank" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-700 transition-colors"><i class="fa-solid fa-file-pdf text-rose-400"></i> Ver partitura / PDF</a></div>`;
+            }
+            lyricsContainer.innerHTML = lyricsHtml;
+
+            if(song.page) {
+                currentPageBadge.textContent = `Pág. ${song.page}`;
+                currentPageBadge.classList.remove('hidden');
+            } else {
+                currentPageBadge.classList.add('hidden');
+            }
+        }
+
+        function playSong() {
+            audioElement.play().then(() => {
+                isPlaying = true;
+                playPauseIcon.className = "fa-solid fa-pause";
+                renderSongList();
+            }).catch(e => console.log("Error al reproducir:", e));
+        }
+
+        function pauseSong() {
+            audioElement.pause();
+            isPlaying = false;
+            playPauseIcon.className = "fa-solid fa-play ml-0.5";
+            renderSongList();
+        }
+
+        function togglePlayPause() {
+            if(!audioElement.src) {
+                loadSong(currentIndex);
+            }
+            if(isPlaying) {
+                pauseSong();
+            } else {
+                playSong();
+            }
+        }
+
+        function playNext() {
+            if(isShuffle) {
+                currentIndex = Math.floor(Math.random() * playlist.length);
+            } else {
+                currentIndex = (currentIndex + 1) % playlist.length;
+            }
+            loadSong(currentIndex);
+            playSong();
+            renderSongList();
+        }
+
+        function playPrevious() {
+            currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+            loadSong(currentIndex);
+            playSong();
+            renderSongList();
+        }
+
+        function toggleShuffle() {
+            isShuffle = !isShuffle;
+            shuffleBtn.classList.toggle('text-emerald-400', isShuffle);
+        }
+
+        function toggleLoop() {
+            loopMode = (loopMode + 1) % 3;
+            if(loopMode === 0) {
+                loopBtn.classList.remove('text-emerald-400');
+                loopIndicator.classList.add('hidden');
+                audioElement.loop = false;
+            } else if(loopMode === 1) {
+                loopBtn.classList.add('text-emerald-400');
+                loopIndicator.classList.remove('hidden');
+                loopIndicator.textContent = "1";
+                audioElement.loop = true;
+            } else {
+                loopIndicator.textContent = "all";
+                audioElement.loop = false;
+            }
+        }
+
+        function handleSongEnded() {
+            if(loopMode === 1) {
+                audioElement.play();
+            } else if(loopMode === 2 || currentIndex < playlist.length - 1) {
+                playNext();
+            } else {
+                pauseSong();
+            }
+        }
+
+        function updateProgress() {
+            if(audioElement.duration) {
+                const percent = (audioElement.currentTime / audioElement.duration) * 100;
+                progressBar.style.width = `${percent}%`;
+                currentTimeEl.textContent = formatTime(audioElement.currentTime);
+            }
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function toggleFavorite(letonName) {
+            if(favorites.includes(letonName)) {
+                favorites = favorites.filter(f => f !== letonName);
+            } else {
+                favorites.push(letonName);
+            }
+            localStorage.setItem('lv_favs', JSON.stringify(favorites));
+            renderSongList();
+            if(playlist[currentIndex] && playlist[currentIndex].leton === letonName) {
+                loadSong(currentIndex);
+            }
+        }
+
+        function toggleFavsFilter() {
+            showOnlyFavs = !showOnlyFavs;
+            if(showOnlyFavs) {
+                filterFavsBtn.classList.add('bg-emerald-500/20', 'border-emerald-500/50', 'text-emerald-400');
+                favIconBtn.className = "fa-solid fa-heart text-rose-500";
+                activeListLabel.textContent = "Cantos favoritos";
+            } else {
+                filterFavsBtn.classList.remove('bg-emerald-500/20', 'border-emerald-500/50', 'text-emerald-400');
+                favIconBtn.className = "fa-regular fa-heart text-rose-500";
+                activeListLabel.textContent = "Todos los con audio";
+            }
+            renderSongList();
+        }
+
+        // Inicializar al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            initApp();
+            if(playlist.length > 0) loadSong(0);
+        });
+    </script>
+</body>
+</html>
